@@ -1,0 +1,57 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  username String @unique
+  password String
+}
+
+model Menu {
+  id    Int    @id @default(autoincrement())
+  date  DateTime @unique
+  meals Meal[]
+}
+
+model Meal {
+  id     Int    @id @default(autoincrement())
+  type   MealType
+  menu   Menu   @relation(fields: [menuId], references: [id])
+  menuId Int
+  items  MealItem[]
+}
+
+model MealItem {
+  id        Int        @id @default(autoincrement())
+  name      String
+  meal      Meal       @relation(fields: [mealId], references: [id])
+  mealId    Int
+  allergens MealItemAllergen[]
+}
+
+model Allergen {
+  id     Int    @id @default(autoincrement())
+  name   String @unique
+  items  MealItemAllergen[]
+}
+
+model MealItemAllergen {
+  mealItemId Int
+  allergenId Int
+  mealItem   MealItem @relation(fields: [mealItemId], references: [id])
+  allergen   Allergen @relation(fields: [allergenId], references: [id])
+
+  @@id([mealItemId, allergenId])
+}
+
+enum MealType {
+  breakfast
+  lunch
+  dinner
+}
