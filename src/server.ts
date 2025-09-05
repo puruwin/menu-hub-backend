@@ -64,7 +64,7 @@ server.get("/menus/:date", async (request, reply) => {
 
 // Crear menú (protegido)
 server.post("/menus", { preHandler: [authGuard] }, async (request, reply) => {
-    const { date, meals } = request.body as any; // luego tipar mejor
+    const { date, meals } = request.body as any;
 
     const newMenu = await prisma.menu.create({
         data: {
@@ -79,21 +79,27 @@ server.post("/menus", { preHandler: [authGuard] }, async (request, reply) => {
                                 create: item.allergens.map((allergenName: string) => ({
                                     allergen: {
                                         connectOrCreate: {
-                                            where: { name: allergenName },   // nombre único en Allergen
-                                            create: { name: allergenName },
+                                            where: { name: allergenName },
+                                            create: { name: allergenName }
                                         }
                                     }
                                 }))
                             }
                         }))
                     }
-                })),
-            },
+                }))
+            }
         },
         include: {
             meals: {
                 include: {
-                    items: { include: { allergens: { include: { allergen: true } } } }
+                    items: {
+                        include: {
+                            allergens: {
+                                include: { allergen: true }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -101,6 +107,7 @@ server.post("/menus", { preHandler: [authGuard] }, async (request, reply) => {
 
     return newMenu;
 });
+
 
 // Actualizar menú (simplificado)
 server.put("/menus/:id", { preHandler: [authGuard] }, async (request, reply) => {
