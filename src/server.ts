@@ -1,15 +1,21 @@
-import Fastify from "fastify";
+import Fastify, { type FastifyRequest, type FastifyReply } from "fastify";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { PrismaClient, MealType } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const server = Fastify();
 const prisma = new PrismaClient();
 
+// Configurar CORS
+server.register(import('@fastify/cors'), {
+  origin: true, // Permite todos los orígenes en desarrollo
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+});
+
 const JWT_SECRET = "supersecreto"; // ⚠️ en producción usa una var de entorno
 
 // Login
-server.post("/auth/login", async (request, reply) => {
+server.post("/auth/login", async (request: FastifyRequest, reply: FastifyReply) => {
     const { username, password } = request.body as {
         username: string;
         password: string;
@@ -30,14 +36,15 @@ server.post("/auth/login", async (request, reply) => {
 });
 
 // Middleware simple para proteger rutas
-async function authGuard(request: any, reply: any) {
+async function authGuard(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     try {
         const auth = request.headers.authorization;
-        if (!auth) throw new Error("No auth header");
+        if (!auth || typeof auth !== 'string') throw new Error("No auth header");
 
         const token = auth.split(" ")[1];
+        if (!token) throw new Error("No token");
         const decoded = jwt.verify(token, JWT_SECRET);
-        request.user = decoded;
+        (request as any).user = decoded;
     } catch (err) {
         reply.status(401).send({ error: "No autorizado" });
     }

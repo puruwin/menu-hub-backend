@@ -10,6 +10,9 @@
     "start": "node dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "prisma": {
+    "seed": "npx ts-node prisma/seed.ts"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -23,9 +26,9 @@
   },
   "dependencies": {
     "@prisma/client": "^6.15.0",
+    "@fastify/cors": "^9.0.1",
     "bcrypt": "^6.0.0",
     "fastify": "^5.6.0",
-    "fastify-cors": "^6.0.3",
     "jsonwebtoken": "^9.0.2"
   }
 }
