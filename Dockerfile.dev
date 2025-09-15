@@ -28,9 +28,22 @@ COPY . .
 # Generar cliente Prisma para ARM
 RUN npx prisma generate
 
-# Copiamos script de inicialización
-COPY ./scripts/docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+# Crear script de inicialización directamente
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "🍓 Iniciando backend de Menu Hub..."\n\
+echo "⏳ Esperando a que PostgreSQL esté disponible..."\n\
+until pg_isready -h database -p 5432 -U menuhub; do\n\
+  echo "PostgreSQL no está listo - esperando..."\n\
+  sleep 2\n\
+done\n\
+echo "✅ PostgreSQL está disponible!"\n\
+echo "🗃️  Aplicando migraciones de base de datos..."\n\
+npx prisma migrate deploy || npx prisma db push\n\
+echo "🌱 Ejecutando seed de datos..."\n\
+npx prisma db seed || echo "No hay seed configurado"\n\
+echo "🚀 Iniciando aplicación..."\n\
+exec "$@"' > /usr/local/bin/docker-entrypoint.sh && chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 3000
 
