@@ -47,7 +47,7 @@ services:
   # Frontend
   frontend:
     build:
-      context: ../menu-hub-frontend/menu-hub
+      context: ../menu-hub
       dockerfile: Dockerfile
     ports:
       - "80:80"
