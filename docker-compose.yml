@@ -4,7 +4,6 @@ services:
   # Base de datos PostgreSQL para ARM
   database:
     image: postgres:15-alpine
-    platform: linux/arm64/v8  # Especifica arquitectura ARM para RPi
     environment:
       POSTGRES_DB: menuhub
       POSTGRES_USER: menuhub
@@ -13,71 +12,52 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    # Límites de recursos compatibles con Compose 1.29.2
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 1.0
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U menuhub"]
       interval: 30s  # Intervalos más largos para RPi
       timeout: 10s
       retries: 5
-    # Configuración de memoria para Raspberry Pi
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-        reservations:
-          memory: 256M
 
   # Backend
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-      platforms:
-        - linux/arm64/v8  # Para Raspberry Pi 4/5
-        - linux/arm/v7    # Para Raspberry Pi 3
     environment:
       DATABASE_URL: "postgresql://menuhub:menuhub123@database:5432/menuhub"
       JWT_SECRET: "supersecreto_produccion_rpi"
       NODE_ENV: production
     ports:
       - "3000:3000"
+    # Límites de recursos para Node.js backend
+    mem_limit: 1g
+    memswap_limit: 1g
+    cpus: 2.0
     depends_on:
       database:
         condition: service_healthy
     volumes:
       - ./prisma:/app/prisma
     restart: unless-stopped
-    # Límites de recursos para Raspberry Pi
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '2.0'
-        reservations:
-          memory: 512M
-          cpus: '0.5'
 
   # Frontend
   frontend:
     build:
       context: ../menu-hub-frontend/menu-hub
       dockerfile: Dockerfile
-      platforms:
-        - linux/arm64/v8
-        - linux/arm/v7
     ports:
       - "80:80"
+    # Límites de recursos para nginx (ligero)
+    mem_limit: 256m
+    memswap_limit: 256m
+    cpus: 1.0
     depends_on:
       - backend
     restart: unless-stopped
-    # Límites de recursos para nginx
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '1.0'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
 
 volumes:
   postgres_data:
