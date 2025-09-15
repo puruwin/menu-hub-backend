@@ -7,9 +7,9 @@ const server = Fastify();
 const prisma = new PrismaClient();
 
 // Configurar CORS
-server.register(import('@fastify/cors'), {
+server.register(require('@fastify/cors'), {
   origin: true, // Permite todos los orígenes en desarrollo
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+  credentials: true
 });
 
 const JWT_SECRET = "supersecreto"; // ⚠️ en producción usa una var de entorno
