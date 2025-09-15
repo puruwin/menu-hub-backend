@@ -1,0 +1,35 @@
+FROM node:20-slim
+
+WORKDIR /app
+
+# Instalar dependencias del sistema para Raspberry Pi
+RUN apt-get update -y && apt-get install -y \
+    openssl \
+    libssl3 \
+    libc6 \
+    libgcc1 \
+    libgomp1 \
+    libstdc++6 \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar archivos de dependencias
+COPY package*.json ./
+
+# Configuración para Raspberry Pi e instalación
+RUN npm config set target_arch arm64 && \
+    npm config set target_platform linux && \
+    npm install
+
+# Copiar código fuente
+COPY . .
+
+# Generar cliente Prisma para ARM
+RUN npx prisma generate
+
+EXPOSE 3000
+
+# Comando por defecto (se puede sobrescribir en docker-compose)
+CMD ["npm", "run", "dev"]

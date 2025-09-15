@@ -4,6 +4,7 @@ FROM node:20-slim AS builder
 # Establecemos directorio de trabajo
 WORKDIR /app
 
+# Instalar dependencias para Raspberry Pi
 RUN apt-get update -y && apt-get install -y \
     openssl \
     libssl3 \
@@ -11,13 +12,19 @@ RUN apt-get update -y && apt-get install -y \
     libgcc1 \
     libgomp1 \
     libstdc++6 \
+    python3 \
+    make \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiamos package.json y package-lock.json para instalar dependencias
 COPY package*.json ./
 
 # Instalamos dependencias (incluyendo devDependencies para build)
-RUN npm install
+# Configuración específica para Raspberry Pi
+RUN npm config set target_arch arm64 && \
+    npm config set target_platform linux && \
+    npm install
 
 # Copiamos el resto del código
 COPY . .

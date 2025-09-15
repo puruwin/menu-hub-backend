@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # Base de datos para desarrollo
+  database:
+    image: postgres:15-alpine
+    platform: linux/arm64/v8
+    environment:
+      POSTGRES_DB: menuhub_dev
+      POSTGRES_USER: menuhub
+      POSTGRES_PASSWORD: menuhub123
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    # Configuración ligera para desarrollo
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # Backend en modo desarrollo
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      platforms:
+        - linux/arm64/v8
+        - linux/arm/v7
+    environment:
+      DATABASE_URL: "postgresql://menuhub:menuhub123@database:5432/menuhub_dev"
+      JWT_SECRET: "supersecreto_desarrollo"
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - database
+    command: npm run dev
+    # Límites más generosos para desarrollo
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.5'
+
+  # Frontend en modo desarrollo
+  frontend:
+    build:
+      context: ../menu-hub-frontend/menu-hub
+      dockerfile: Dockerfile.dev
+      platforms:
+        - linux/arm64/v8
+        - linux/arm/v7
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../menu-hub-frontend/menu-hub:/app
+      - /app/node_modules
+    environment:
+      VITE_API_URL: http://localhost:3000
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+
+volumes:
+  postgres_dev_data:
+    driver: local
