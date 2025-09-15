@@ -6,13 +6,15 @@ import { PrismaClient } from "@prisma/client";
 const server = Fastify();
 const prisma = new PrismaClient();
 
-// Configurar CORS
-server.register(require('@fastify/cors'), {
-  origin: true, // Permite todos los orígenes en desarrollo
-  credentials: true
-});
-
 const JWT_SECRET = "supersecreto"; // ⚠️ en producción usa una var de entorno
+
+// Configurar CORS
+async function setupServer() {
+  await server.register(import('@fastify/cors'), {
+    origin: true, // Permite todos los orígenes en desarrollo
+    credentials: true
+  });
+}
 
 // Login
 server.post("/auth/login", async (request: FastifyRequest, reply: FastifyReply) => {
@@ -169,10 +171,16 @@ server.get("/private", { preHandler: [authGuard] }, async () => {
     return { message: "Accediste al área privada 🚀" };
 });
 
-server.listen({ port: 3000, host: "0.0.0.0" }, (err, address) => {
-    if (err) {
-        console.error(err);
-        process.exit(1);
-    }
-    console.log(`Servidor escuchando en ${address}`);
-});
+// Inicializar servidor
+async function start() {
+  try {
+    await setupServer();
+    await server.listen({ port: 3000, host: "0.0.0.0" });
+    console.log(`Servidor escuchando en http://0.0.0.0:3000`);
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
+}
+
+start();

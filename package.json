@@ -11,7 +11,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "prisma": {
-    "seed": "npx ts-node prisma/seed.ts"
+    "seed": "node dist/seed.js"
   },
   "keywords": [],
   "author": "",
