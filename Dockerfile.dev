@@ -13,6 +13,7 @@ RUN apt-get update -y && apt-get install -y \
     python3 \
     make \
     g++ \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar archivos de dependencias
@@ -27,7 +28,12 @@ COPY . .
 # Generar cliente Prisma para ARM
 RUN npx prisma generate
 
+# Copiamos script de inicialización
+COPY scripts/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 EXPOSE 3000
 
-# Comando por defecto (se puede sobrescribir en docker-compose)
+# Usar entrypoint para desarrollo también
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["npm", "run", "dev"]

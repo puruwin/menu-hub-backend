@@ -26,18 +26,10 @@ RUN npm install
 # Copiamos el resto del código
 COPY . .
 
-# Generamos cliente Prisma
+# Generamos cliente Prisma (esto sí se puede hacer en build time)
 RUN npx prisma generate
 
-# Aplicamos migraciones / creamos tablas en la base de datos
-# En producción normalmente usarías migrate deploy
-# Para desarrollo puedes usar: npx prisma db push
-# Aquí dejamos la línea lista para desarrollo, puedes cambiarla
-# RUN npx prisma migrate deploy
-RUN npx prisma db push
-
-# Ejecutamos seed opcional si lo tienes configurado
-# RUN npx prisma db seed
+# NOTA: Las migraciones y db push se ejecutarán en runtime cuando la DB esté disponible
 
 # Compilamos TypeScript
 RUN npm run build
@@ -46,6 +38,9 @@ RUN npm run build
 FROM node:20-slim
 
 WORKDIR /app
+
+# Instalar postgresql-client para pg_isready
+RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
 
 # Copiamos solo las dependencias de producción
 COPY package*.json ./
@@ -58,8 +53,13 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 # Copiamos archivo de prisma (para migrations o db push en runtime)
 COPY --from=builder /app/prisma ./prisma
 
+# Copiamos script de inicialización
+COPY scripts/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Exponemos puerto del backend
 EXPOSE 3000
 
-# Comando para arrancar servidor
+# Usar entrypoint para manejar la inicialización
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["node", "dist/server.js"]

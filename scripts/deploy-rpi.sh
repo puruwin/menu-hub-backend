@@ -36,13 +36,8 @@ if ! docker-compose ps | grep -q "Up"; then
     exit 1
 fi
 
-# Aplicar migraciones de base de datos
-echo "🗃️  Aplicando migraciones..."
-docker-compose exec -T backend npx prisma migrate deploy
-
-# Ejecutar seed si existe
-echo "🌱 Ejecutando seed..."
-docker-compose exec -T backend npx prisma db seed || echo "No hay seed configurado"
+# Las migraciones y seed se ejecutarán automáticamente cuando el backend arranque
+echo "🗃️  Migraciones y seed se ejecutarán automáticamente al iniciar el backend..."
 
 # Mostrar estado final
 echo "✅ Despliegue completado en Raspberry Pi!"
