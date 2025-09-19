@@ -67,8 +67,8 @@ until pg_isready -h database -p 5432 -U menuhub; do\n\
   sleep 2\n\
 done\n\
 echo "✅ PostgreSQL está disponible!"\n\
-echo "🗃️  Aplicando migraciones de base de datos..."\n\
-npx prisma migrate deploy || npx prisma db push\n\
+echo "🗃️  Inicializando base de datos PostgreSQL..."\n\
+npx prisma db push\n\
 echo "🌱 Ejecutando seed de datos..."\n\
 npx prisma db seed || echo "No hay seed configurado"\n\
 echo "🚀 Iniciando aplicación..."\n\
