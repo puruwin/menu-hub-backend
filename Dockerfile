@@ -39,16 +39,20 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# Instalar postgresql-client para pg_isready
-RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
+# Instalar herramientas necesarias para Raspberry Pi y sqlite3
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copiamos solo las dependencias de producción
-COPY package*.json ./
-RUN npm install --omit=dev
+# Copiamos los node_modules ya compilados del builder
+COPY --from=builder /app/node_modules ./node_modules
 
-# Copiamos el build y el cliente Prisma generado
+# Copiamos el build y archivos necesarios
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY package*.json ./
 
 # Copiamos archivo de prisma (para migrations o db push en runtime)
 COPY --from=builder /app/prisma ./prisma
