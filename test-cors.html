@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test CORS</title>
+</head>
+<body>
+    <h1>Test CORS</h1>
+    <button onclick="testGet()">Test GET /menus</button>
+    <button onclick="testPost()">Test POST /auth/login</button>
+    <button onclick="testPut()">Test PUT /menus/1</button>
+    <div id="results"></div>
+
+    <script>
+        async function testGet() {
+            try {
+                const response = await fetch('http://localhost:3000/menus');
+                const data = await response.json();
+                document.getElementById('results').innerHTML = '<pre>GET Success: ' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('results').innerHTML = '<pre>GET Error: ' + error.message + '</pre>';
+            }
+        }
+
+        async function testPost() {
+            try {
+                const response = await fetch('http://localhost:3000/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    })
+                });
+                const data = await response.json();
+                document.getElementById('results').innerHTML = '<pre>POST Success: ' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('results').innerHTML = '<pre>POST Error: ' + error.message + '</pre>';
+            }
+        }
+
+        async function testPut() {
+            try {
+                const response = await fetch('http://localhost:3000/menus/1', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTc1ODI3Mjc0OSwiZXhwIjoxNzU4Mjc2MzQ5fQ.xBsJblg_06ogpZvpcpwbXl_c1WIlKqfYck5igLWe24Y'
+                    },
+                    body: JSON.stringify({
+                        meals: []
+                    })
+                });
+                const data = await response.json();
+                document.getElementById('results').innerHTML = '<pre>PUT Success: ' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('results').innerHTML = '<pre>PUT Error: ' + error.message + '</pre>';
+            }
+        }
+    </script>
+</body>
+</html>
