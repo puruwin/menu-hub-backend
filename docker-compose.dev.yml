@@ -26,6 +26,7 @@ services:
       DATABASE_URL: "postgresql://menuhub:menuhub123@database:5432/menuhub_dev"
       JWT_SECRET: "supersecreto_desarrollo"
       NODE_ENV: development
+      # En desarrollo no definimos CORS_ORIGINS para ser más permisivo
     ports:
       - "3000:3000"
     # Límites para desarrollo con hot reload
