@@ -31,7 +31,7 @@ services:
       DATABASE_URL: "postgresql://menuhub:menuhub123@database:5432/menuhub"
       JWT_SECRET: "supersecreto_produccion_rpi"
       NODE_ENV: production
-      CORS_ORIGINS: "http://192.168.1.90"
+      CORS_ORIGINS: "http://192.168.1.130"
     ports:
       - "3000:3000"
     # Límites de recursos para Node.js backend
