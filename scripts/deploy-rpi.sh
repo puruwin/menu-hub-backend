@@ -20,7 +20,7 @@ fi
 # Configurar variables de entorno para el frontend
 echo "🔧 Configurando variables de entorno..."
 IP=$(hostname -I | awk '{print $1}')
-echo "VITE_API_URL=$IP" > ../saal-hub/.env.production
+echo "VITE_API_URL=$IP" > ../../saal-hub/.env.production
 echo "✅ Configurado VITE_API_URL=$IP"
 
 # Parar solo contenedores relacionados con este proyecto
