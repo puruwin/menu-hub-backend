@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # Base de datos PostgreSQL para ARM
   database:
     image: postgres:15-alpine
     environment:
@@ -12,21 +11,22 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    # Límites de recursos compatibles con Compose 1.29.2
     mem_limit: 512m
     memswap_limit: 512m
     cpus: 1.0
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U menuhub"]
-      interval: 30s  # Intervalos más largos para RPi
+      interval: 30s
       timeout: 10s
       retries: 5
 
-  # Backend
   backend:
     build:
       context: .
       dockerfile: Dockerfile
+      # ⚡ Habilita caché persistente entre builds
+      args:
+        - NODE_ENV=production
     environment:
       DATABASE_URL: "postgresql://menuhub:menuhub123@database:5432/menuhub"
       JWT_SECRET: "supersecreto_produccion_rpi"
@@ -34,7 +34,6 @@ services:
       CORS_ORIGINS: "http://192.168.1.90"
     ports:
       - "3000:3000"
-    # Límites de recursos para Node.js backend
     mem_limit: 1g
     memswap_limit: 1g
     cpus: 2.0
@@ -43,16 +42,18 @@ services:
         condition: service_healthy
     volumes:
       - ./prisma:/app/prisma
+      # ⚡ Mantén la caché de npm para no reinstalar dependencias cada build
+      - ~/.npm:/root/.npm
     restart: unless-stopped
 
-  # Frontend
   frontend:
     build:
-      context: ../menu-hub
+      context: ./menu-hub
       dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
     ports:
       - "80:80"
-    # Límites de recursos para nginx (ligero)
     mem_limit: 256m
     memswap_limit: 256m
     cpus: 1.0
