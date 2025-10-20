@@ -48,7 +48,7 @@ services:
 
   frontend:
     build:
-      context: ./menu-hub
+      context: ../menu-hub-frontend
       dockerfile: Dockerfile
       args:
         - NODE_ENV=production
