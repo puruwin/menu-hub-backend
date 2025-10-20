@@ -31,7 +31,7 @@ services:
       DATABASE_URL: "postgresql://menuhub:menuhub123@database:5432/menuhub"
       JWT_SECRET: "supersecreto_produccion_rpi"
       NODE_ENV: production
-      CORS_ORIGINS: "http://192.168.1.90"
+      CORS_ORIGINS: "http://192.168.1.90,http://localhost"
     ports:
       - "3000:3000"
     mem_limit: 1g
@@ -52,6 +52,7 @@ services:
       dockerfile: Dockerfile
       args:
         - NODE_ENV=production
+        - VITE_API_URL=192.168.1.90
     ports:
       - "80:80"
     mem_limit: 256m
