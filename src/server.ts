@@ -1,7 +1,7 @@
 import Fastify, { type FastifyRequest, type FastifyReply } from "fastify";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { PrismaClient } from "@prisma/client";
+import { MealType, PrismaClient } from "@prisma/client";
 
 const server = Fastify();
 const prisma = new PrismaClient();
@@ -334,7 +334,7 @@ server.delete("/menus/:menuId/meals/:mealId/items/:itemId", { preHandler: [authG
 // Agregar comida completa a un menú
 server.post("/menus/:menuId/meals", { preHandler: [authGuard] }, async (request, reply) => {
     const { menuId } = request.params as { menuId: string };
-    const { type, items } = request.body as { type: string; items: any[] };
+    const { type, items } = request.body as { type: MealType; items: any[] };
 
     const meal = await prisma.meal.create({
         data: {
