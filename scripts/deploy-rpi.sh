@@ -11,8 +11,8 @@ fi
 export DOCKER_BUILDKIT=1
 
 # Verificar que existe el directorio del frontend
-if [ ! -d "../saal-hub" ]; then
-    echo "❌ Error: No se encontró el directorio ../saal-hub"
+if [ ! -d "../../saal-hub" ]; then
+    echo "❌ Error: No se encontró el directorio ../../saal-hub"
     echo "   Asegúrate de que el frontend esté en el directorio correcto"
     exit 1
 fi
