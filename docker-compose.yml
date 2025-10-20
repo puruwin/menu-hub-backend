@@ -48,7 +48,7 @@ services:
 
   frontend:
     build:
-      context: ../../saal-hub
+      context: /home/ah_admin/saal-hub
       dockerfile: Dockerfile
       args:
         - NODE_ENV=production

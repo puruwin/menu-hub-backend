@@ -11,8 +11,8 @@ fi
 export DOCKER_BUILDKIT=1
 
 # Verificar que existe el directorio del frontend
-if [ ! -d "../../saal-hub" ]; then
-    echo "❌ Error: No se encontró el directorio ../../saal-hub"
+if [ ! -d "$HOME/saal-hub" ]; then
+    echo "❌ Error: No se encontró el directorio $HOME/saal-hub"
     echo "   Asegúrate de que el frontend esté en el directorio correcto"
     exit 1
 fi
@@ -20,7 +20,7 @@ fi
 # Configurar variables de entorno para el frontend
 echo "🔧 Configurando variables de entorno..."
 IP=$(hostname -I | awk '{print $1}')
-echo "VITE_API_URL=$IP" > ../../saal-hub/.env.production
+echo "VITE_API_URL=$IP" > $HOME/saal-hub/.env.production
 echo "✅ Configurado VITE_API_URL=$IP"
 
 # Parar solo contenedores relacionados con este proyecto
