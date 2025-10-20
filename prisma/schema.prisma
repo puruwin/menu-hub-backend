@@ -22,7 +22,7 @@ model Menu {
 
 model Meal {
   id      Int      @id @default(autoincrement())
-  type    String
+  type    MealType
   menu    Menu     @relation(fields: [menuId], references: [id])
   menuId  Int
   items   MealItem[]
