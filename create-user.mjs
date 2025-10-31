@@ -20,16 +20,15 @@ async function createUser() {
       }
     });
     
-    console.log('Usuario creado/actualizado exitosamente:', {
-      id: user.id,
-      username: user.username,
-      password: 'admin123'
-    });
+    console.log('✅ Usuario creado/actualizado exitosamente:');
+    console.log('   Usuario: admin');
+    console.log('   Contraseña: admin123');
   } catch (error) {
-    console.error('Error:', error);
+    console.error('❌ Error:', error);
   } finally {
     await prisma.$disconnect();
   }
 }
 
 createUser();
+

@@ -1,5 +1,5 @@
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -29,28 +29,53 @@ model Meal {
 }
 
 model MealItem {
+  id      Int      @id @default(autoincrement())
+  meal    Meal     @relation(fields: [mealId], references: [id])
+  mealId  Int
+  dish    Dish     @relation(fields: [dishId], references: [id])
+  dishId  Int
+}
+
+model Dish {
   id        Int                 @id @default(autoincrement())
-  name      String
-  meal      Meal                @relation(fields: [mealId], references: [id])
-  mealId    Int
-  allergens MealItemAllergen[]
+  name      String              @unique
+  mealItems MealItem[]
+  allergens DishAllergen[]
 }
 
 model Allergen {
-  id    Int                 @id @default(autoincrement())
-  name  String              @unique
-  items MealItemAllergen[]
+  id              Int                       @id @default(autoincrement())
+  name            String                    @unique
+  dishes          DishAllergen[]
+  plateTemplates  PlateTemplateAllergen[]
 }
 
-model MealItemAllergen {
-  mealItemId Int
+model DishAllergen {
+  dishId     Int
   allergenId Int
-  mealItem   MealItem  @relation(fields: [mealItemId], references: [id])
+  dish       Dish      @relation(fields: [dishId], references: [id])
   allergen   Allergen  @relation(fields: [allergenId], references: [id])
 
-  @@id([mealItemId, allergenId])
+  @@id([dishId, allergenId])
 }
 
+model PlateTemplate {
+  id            Int                       @id @default(autoincrement())
+  name          String                    @unique
+  allergens     PlateTemplateAllergen[]
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  usageCount    Int                       @default(0)
+}
+
+model PlateTemplateAllergen {
+  plateTemplateId Int
+  allergenId      Int
+  plateTemplate   PlateTemplate @relation(fields: [plateTemplateId], references: [id], onDelete: Cascade)
+  allergen        Allergen      @relation(fields: [allergenId], references: [id])
+
+  @@id([plateTemplateId, allergenId])
+}
 
 enum MealType {
   breakfast

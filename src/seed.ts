@@ -4,7 +4,7 @@ import bcrypt from "bcrypt";
 const prisma = new PrismaClient();
 
 async function main() {
-  const passwordHash = await bcrypt.hash("admin123", 10);
+  const passwordHash = await bcrypt.hash("SaalCocina2025", 10);
 
   const existingUser = await prisma.user.findUnique({
     where: { username: "admin" },
