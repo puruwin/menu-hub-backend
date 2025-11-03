@@ -51,7 +51,6 @@ services:
       context: /home/ah_admin/saal-hub
       dockerfile: Dockerfile
       args:
-        - NODE_ENV=production
         - VITE_API_URL=192.168.1.90
     ports:
       - "80:80"

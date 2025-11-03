@@ -31,8 +31,9 @@ docker compose down
 echo "🧹 Limpiando caché de build..."
 docker builder prune -f
 
-echo "🔨 Construyendo y levantando servicios..."
-docker compose up -d --build
+echo "🔨 Construyendo y levantando servicios (sin caché para forzar reconstrucción)..."
+docker compose build --no-cache
+docker compose up -d
 
 # Esperar a que los servicios estén listos
 echo "⏳ Esperando a que los servicios estén operativos..."
