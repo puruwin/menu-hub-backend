@@ -1933,6 +1933,31 @@
           "day": "LUN",
           "meals": [
             {
+              "type": "breakfast",
+              "items": [
+                {
+                  "name": "Porridge",
+                  "allergens": []
+                },
+                {
+                  "name": "Queso Mozarella",
+                  "allergens": []
+                },
+                {
+                  "name": "Tomate y albahaca",
+                  "allergens": []
+                },
+                {
+                  "name": "Aguacate",
+                  "allergens": []
+                },
+                {
+                  "name": "Pan",
+                  "allergens": []
+                }
+              ]
+            },
+            {
               "type": "lunch",
               "items": [
                 {
@@ -1971,6 +1996,27 @@
         {
           "day": "MAR",
           "meals": [
+            {
+              "type": "breakfast",
+              "items": [
+                {
+                  "name": "Tortilla Rellena",
+                  "allergens": []
+                },
+                {
+                  "name": "Queso Brie",
+                  "allergens": []
+                },
+                {
+                  "name": "Tomate Rallado",
+                  "allergens": []
+                },
+                {
+                  "name": "Pan",
+                  "allergens": []
+                }
+              ]
+            },
             {
               "type": "lunch",
               "items": [
@@ -2011,6 +2057,31 @@
           "day": "MIE",
           "meals": [
             {
+              "type": "breakfast",
+              "items": [
+                {
+                  "name": "Yogur y granola",
+                  "allergens": []
+                },
+                {
+                  "name": "Bizcocho de zanahoria",
+                  "allergens": []
+                },
+                {
+                  "name": "Salchichón",
+                  "allergens": []
+                },
+                {
+                  "name": "Tomate Lamienado",
+                  "allergens": []
+                },
+                {
+                  "name": "Pan",
+                  "allergens": []
+                }
+              ]
+            },
+            {
               "type": "lunch",
               "items": [
                 {
@@ -2049,6 +2120,31 @@
         {
           "day": "JUE",
           "meals": [
+            {
+              "type": "breakfast",
+              "items": [
+                {
+                  "name": "Jamón Serrano",
+                  "allergens": []
+                },
+                {
+                  "name": "Aguacate",
+                  "allergens": []
+                },
+                {
+                  "name": "Zumo de naranja",
+                  "allergens": []
+                },
+                {
+                  "name": "Tomate Rallado",
+                  "allergens": []
+                },
+                {
+                  "name": "Pan",
+                  "allergens": []
+                }
+              ]
+            },
             {
               "type": "lunch",
               "items": [
@@ -2089,6 +2185,31 @@
           "day": "VIE",
           "meals": [
             {
+              "type": "breakfast",
+              "items": [
+                {
+                  "name": "Yogur y granola",
+                  "allergens": []
+                },
+                {
+                  "name": "Lacón Ahumado",
+                  "allergens": []
+                },
+                {
+                  "name": "Hojas de albahaca",
+                  "allergens": []
+                },
+                {
+                  "name": "Tomate Rallado",
+                  "allergens": []
+                },
+                {
+                  "name": "Pan",
+                  "allergens": []
+                }
+              ]
+            },
+            {
               "type": "lunch",
               "items": [
                 {
@@ -2123,6 +2244,27 @@
         {
           "day": "SAB_DOM",
           "meals": [
+            {
+              "type": "breakfast",
+              "items": [
+                {
+                  "name": "Donuts Original",
+                  "allergens": []
+                },
+                {
+                  "name": "Embutido",
+                  "allergens": []
+                },
+                {
+                  "name": "Tomate Rallado",
+                  "allergens": []
+                },
+                {
+                  "name": "Pan",
+                  "allergens": []
+                }
+              ]
+            },
             {
               "type": "lunch",
               "items": [

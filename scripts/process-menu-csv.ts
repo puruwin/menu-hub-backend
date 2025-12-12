@@ -29,6 +29,7 @@ interface MenuData {
 // Mapeo de tipos de comida
 const mealTypeMap: Record<string, 'breakfast' | 'lunch' | 'dinner'> = {
   'DESAYUNO': 'breakfast',
+  'DESAYUNOS': 'breakfast',
   'COMIDA': 'lunch',
   'CENA': 'dinner'
 };

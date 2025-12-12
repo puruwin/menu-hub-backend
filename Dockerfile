@@ -71,11 +71,10 @@ echo "🗃️  Inicializando base de datos PostgreSQL..."\n\
 if npx prisma db push 2>&1 | grep -q "cannot be executed"; then\n\
   echo "⚠️  Detectado cambio de schema incompatible. Reseteando base de datos..."\n\
   npx prisma db push --force-reset --accept-data-loss\n\
-  echo "🌱 Ejecutando seed de datos..."\n\
-  npx prisma db seed || echo "No hay seed configurado"\n\
-else\n\
-  echo "✅ Schema de base de datos actualizado"\n\
 fi\n\
+echo "✅ Schema de base de datos actualizado"\n\
+echo "🌱 Ejecutando seed de datos..."\n\
+npx prisma db seed || echo "No hay seed configurado"\n\
 echo "🚀 Iniciando aplicación..."\n\
 exec "$@"' > /usr/local/bin/docker-entrypoint.sh && chmod +x /usr/local/bin/docker-entrypoint.sh
 
