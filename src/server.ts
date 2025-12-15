@@ -7,7 +7,9 @@ import { plateTemplateRoutes } from "./routes/plate-template.routes";
 import { prisma } from "./config/database";
 
 // Inicializar servidor
-const server = Fastify();
+const server = Fastify({
+  ignoreTrailingSlash: true // Evita redirecciones 301 por trailing slash
+});
 
 // Configurar servidor
 async function setupServer() {
