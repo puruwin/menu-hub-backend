@@ -346,20 +346,25 @@ export async function menuRoutes(server: FastifyInstance) {
           dish = await prisma.dish.create({
             data: { name: dishName }
           });
-          
-          // Crear relaciones con alérgenos
-          for (const allergenName of allergens) {
-            const allergenId = allergenMap.get(allergenName);
-            if (allergenId) {
-              await prisma.dishAllergen.create({
-                data: {
+        }
+        
+        // Crear/actualizar relaciones con alérgenos (tanto para platos nuevos como existentes)
+        for (const allergenName of allergens) {
+          const allergenId = allergenMap.get(allergenName);
+          if (allergenId) {
+            await prisma.dishAllergen.upsert({
+              where: {
+                dishId_allergenId: {
                   dishId: dish.id,
                   allergenId: allergenId
                 }
-              }).catch(() => {
-                // Ignorar si ya existe la relación
-              });
-            }
+              },
+              update: {}, // No hay nada que actualizar, solo asegurar que existe
+              create: {
+                dishId: dish.id,
+                allergenId: allergenId
+              }
+            });
           }
         }
         
