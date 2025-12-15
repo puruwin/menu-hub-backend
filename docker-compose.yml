@@ -59,9 +59,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-    volumes:
-      # Monta el JSON de menús desde el host para poder actualizarlo sin reconstruir la imagen
-      - ../saal-hub/public/menu_data.json:/usr/share/nginx/html/menu_data.json:ro
 
 volumes:
   postgres_data:
