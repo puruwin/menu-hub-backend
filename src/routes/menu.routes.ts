@@ -258,31 +258,55 @@ export async function menuRoutes(server: FastifyInstance) {
     }
   });
 
-  // Importación masiva de menús escolares
+  // Importación masiva de menús escolares desde plantilla de BD
   server.post("/menus/bulk-import", { preHandler: [authGuard] }, async (request, reply) => {
-    const { startDate, menuData } = request.body as { 
+    const { startDate, templateId } = request.body as { 
       startDate: string; 
-      menuData: { 
-        weeks: Array<{
-          week: number;
-          days: Array<{
-            day: string;
-            meals: Array<{
-              type: string;
-              items: Array<{
-                name: string;
-                allergens: string[];
-              }>;
-            }>;
-          }>;
-        }>;
-      };
+      templateId: number;
     };
 
     try {
-      console.log('🚀 Iniciando importación masiva...');
+      console.log('🚀 Iniciando importación masiva desde plantilla...');
       console.log('📅 Fecha de inicio:', startDate);
-      console.log('📊 Semanas en JSON:', menuData.weeks.length);
+      console.log('📋 ID de plantilla:', templateId);
+
+      // Obtener la plantilla completa de la BD
+      const template = await prisma.menuTemplate.findUnique({
+        where: { id: templateId },
+        include: {
+          weeks: {
+            orderBy: { weekNumber: 'asc' },
+            include: {
+              days: {
+                include: {
+                  meals: {
+                    include: {
+                      items: {
+                        orderBy: { order: 'asc' },
+                        include: {
+                          dish: {
+                            include: {
+                              allergens: {
+                                include: { allergen: true }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (!template) {
+        return reply.status(404).send({ error: "Plantilla no encontrada" });
+      }
+
+      console.log(`📊 Plantilla "${template.name}" con ${template.weeks.length} semanas`);
 
       const startDateObj = new Date(startDate);
       startDateObj.setUTCHours(0, 0, 0, 0);
@@ -290,138 +314,30 @@ export async function menuRoutes(server: FastifyInstance) {
       const createdMenus: any[] = [];
       const skippedMenus: string[] = [];
       const errors: string[] = [];
-      let templatesCreated = 0;
-      let templatesUpdated = 0;
       
-      const dayMap: Record<string, number> = {
-        'LUN': 1, 'MAR': 2, 'MIE': 3, 'JUE': 4, 'VIE': 5, 'SAB_DOM': 6
+      // Mapeo de días desde JUEVES (startDate es siempre jueves)
+      // JUE=0, VIE=1, SAB_DOM=2, LUN=4, MAR=5, MIE=6
+      const dayOffsetFromThursday: Record<string, number> = {
+        'JUE': 0, 'VIE': 1, 'SAB_DOM': 2, 'LUN': 4, 'MAR': 5, 'MIE': 6
       };
 
-      // PASO 1: Recolectar todos los alérgenos y platos únicos
-      console.log('📋 Recolectando alérgenos y platos únicos...');
-      const allAllergens = new Set<string>();
-      const allDishes = new Map<string, string[]>(); // nombre -> alérgenos
-
-      for (const week of menuData.weeks) {
-        for (const day of week.days) {
-          for (const meal of day.meals || []) {
-            for (const item of meal.items || []) {
-              if (item.allergens) {
-                item.allergens.forEach(a => allAllergens.add(a));
-              }
-              if (!allDishes.has(item.name)) {
-                allDishes.set(item.name, item.allergens || []);
-              }
-            }
-          }
-        }
-      }
-
-      console.log(`   📊 Alérgenos únicos: ${allAllergens.size}`);
-      console.log(`   📊 Platos únicos: ${allDishes.size}`);
-
-      // PASO 2: Crear alérgenos (secuencialmente para evitar deadlocks)
-      console.log('🥜 Creando/verificando alérgenos...');
-      const allergenMap = new Map<string, number>();
+      // Crear menús desde la plantilla
+      console.log('📅 Creando menús (empezando desde jueves)...');
       
-      for (const allergenName of allAllergens) {
-        const allergen = await prisma.allergen.upsert({
-          where: { name: allergenName },
-          update: {},
-          create: { name: allergenName }
-        });
-        allergenMap.set(allergenName, allergen.id);
-      }
-
-      // PASO 3: Crear platos con sus alérgenos (secuencialmente)
-      console.log('🍽️  Creando/verificando platos...');
-      const dishMap = new Map<string, number>();
-
-      for (const [dishName, allergens] of allDishes) {
-        // Verificar si el plato existe
-        let dish = await prisma.dish.findUnique({ where: { name: dishName } });
-        
-        if (!dish) {
-          // Crear plato sin alérgenos primero
-          dish = await prisma.dish.create({
-            data: { name: dishName }
-          });
-        }
-        
-        // Crear/actualizar relaciones con alérgenos (tanto para platos nuevos como existentes)
-        for (const allergenName of allergens) {
-          const allergenId = allergenMap.get(allergenName);
-          if (allergenId) {
-            await prisma.dishAllergen.upsert({
-              where: {
-                dishId_allergenId: {
-                  dishId: dish.id,
-                  allergenId: allergenId
-                }
-              },
-              update: {}, // No hay nada que actualizar, solo asegurar que existe
-              create: {
-                dishId: dish.id,
-                allergenId: allergenId
-              }
-            });
-          }
-        }
-        
-        dishMap.set(dishName, dish.id);
-
-        // Actualizar/crear plantilla de plato
-        try {
-          const existingTemplate = await prisma.plateTemplate.findUnique({
-            where: { name: dishName }
-          });
-
-          if (existingTemplate) {
-            await prisma.plateTemplate.update({
-              where: { id: existingTemplate.id },
-              data: { usageCount: { increment: 1 } }
-            });
-            templatesUpdated++;
-          } else {
-            await prisma.plateTemplate.create({
-              data: {
-                name: dishName,
-                usageCount: 1,
-                allergens: {
-                  create: allergens.map(allergenName => ({
-                    allergenId: allergenMap.get(allergenName)!
-                  })).filter(a => a.allergenId)
-                }
-              }
-            });
-            templatesCreated++;
-          }
-        } catch (templateError) {
-          console.warn(`   ⚠️  No se pudo guardar plantilla para "${dishName}"`);
-        }
-      }
-
-      // PASO 4: Crear menús (ahora con IDs conocidos)
-      console.log('📅 Creando menús...');
-      
-      for (const week of menuData.weeks) {
-        console.log(`\n📆 Procesando semana ${week.week}...`);
-        const weekOffset = week.week;
+      for (const week of template.weeks) {
+        console.log(`\n📆 Procesando semana ${week.weekNumber}...`);
+        const weekOffset = week.weekNumber;
         
         for (const day of week.days) {
           try {
             let targetDate = new Date(startDateObj);
             
-            if (day.day === 'SAB_DOM') {
-              targetDate.setDate(startDateObj.getDate() + (weekOffset * 7) + 5);
+            const dayOffset = dayOffsetFromThursday[day.day];
+            if (dayOffset !== undefined) {
+              targetDate.setDate(startDateObj.getDate() + (weekOffset * 7) + dayOffset);
             } else {
-              const dayNumber = dayMap[day.day];
-              if (dayNumber) {
-                targetDate.setDate(startDateObj.getDate() + (weekOffset * 7) + (dayNumber - 1));
-              } else {
-                console.warn(`⚠️  Día desconocido: ${day.day}`);
-                continue;
-              }
+              console.warn(`⚠️  Día desconocido: ${day.day}`);
+              continue;
             }
 
             targetDate.setUTCHours(0, 0, 0, 0);
@@ -444,16 +360,16 @@ export async function menuRoutes(server: FastifyInstance) {
               continue;
             }
 
-            // Crear menú usando IDs conocidos (evita connectOrCreate anidado)
+            // Crear menú usando los platos de la plantilla
             const newMenu = await prisma.menu.create({
               data: {
                 date: targetDate,
                 meals: {
-                  create: day.meals.map((meal: any) => ({
-                    type: meal.type as MealType,
+                  create: day.meals.map((meal) => ({
+                    type: meal.type,
                     items: {
-                      create: meal.items.map((item: any) => ({
-                        dishId: dishMap.get(item.name)!
+                      create: meal.items.map((item) => ({
+                        dishId: item.dishId
                       }))
                     }
                   }))
@@ -481,7 +397,7 @@ export async function menuRoutes(server: FastifyInstance) {
             console.log(`   ✅ Menú creado para ${dateString} con ${newMenu.meals.length} comidas`);
             createdMenus.push(newMenu);
           } catch (dayError) {
-            const errorMsg = `Error procesando ${day.day} de semana ${week.week}: ${dayError instanceof Error ? dayError.message : 'Error desconocido'}`;
+            const errorMsg = `Error procesando ${day.day} de semana ${week.weekNumber}: ${dayError instanceof Error ? dayError.message : 'Error desconocido'}`;
             console.error(`   ❌ ${errorMsg}`);
             errors.push(errorMsg);
           }
@@ -491,17 +407,14 @@ export async function menuRoutes(server: FastifyInstance) {
       console.log('\n📊 Resumen de importación:');
       console.log(`   ✅ Menús creados: ${createdMenus.length}`);
       console.log(`   ⏭️  Menús omitidos (ya existían): ${skippedMenus.length}`);
-      console.log(`   🍽️  Plantillas de platos creadas: ${templatesCreated}`);
-      console.log(`   🔄 Plantillas de platos actualizadas: ${templatesUpdated}`);
       console.log(`   ❌ Errores: ${errors.length}`);
 
       return { 
         message: "Importación completada", 
+        templateName: template.name,
         count: createdMenus.length,
         skipped: skippedMenus.length,
         errors: errors.length,
-        templatesCreated,
-        templatesUpdated,
         details: {
           created: createdMenus.length,
           skipped: skippedMenus,
@@ -698,6 +611,49 @@ export async function menuRoutes(server: FastifyInstance) {
     });
 
     return { message: "Plato eliminado correctamente" };
+  });
+
+  // Reordenar items de una comida
+  server.put("/menus/:menuId/meals/:mealId/items/reorder", { preHandler: [authGuard] }, async (request, reply) => {
+    const { mealId } = request.params as { mealId: string };
+    const { itemIds } = request.body as { itemIds: number[] };
+
+    try {
+      // Actualizar el orden de cada item
+      await Promise.all(
+        itemIds.map((itemId, index) => 
+          prisma.mealItem.update({
+            where: { id: itemId },
+            data: { order: index }
+          })
+        )
+      );
+
+      // Devolver la comida actualizada
+      const updatedMeal = await prisma.meal.findUnique({
+        where: { id: Number(mealId) },
+        include: {
+          items: {
+            orderBy: { order: 'asc' },
+            include: {
+              dish: {
+                include: {
+                  allergens: { include: { allergen: true } }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      return updatedMeal;
+    } catch (error) {
+      console.error('❌ Error reordenando items:', error);
+      return reply.status(500).send({
+        error: "Error al reordenar items",
+        details: error instanceof Error ? error.message : 'Error desconocido'
+      });
+    }
   });
 }
 

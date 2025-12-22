@@ -4,6 +4,7 @@ import { SERVER_HOST, SERVER_PORT } from "./config/constants";
 import { authRoutes } from "./routes/auth.routes";
 import { menuRoutes } from "./routes/menu.routes";
 import { plateTemplateRoutes } from "./routes/plate-template.routes";
+import { menuTemplateRoutes } from "./routes/menu-template.routes";
 import { prisma } from "./config/database";
 
 // Inicializar servidor
@@ -21,6 +22,7 @@ async function registerRoutes() {
   await authRoutes(server);
   await menuRoutes(server);
   await plateTemplateRoutes(server);
+  await menuTemplateRoutes(server);
 }
 
 // Iniciar servidor

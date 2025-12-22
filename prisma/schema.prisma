@@ -34,13 +34,15 @@ model MealItem {
   mealId  Int
   dish    Dish     @relation(fields: [dishId], references: [id])
   dishId  Int
+  order   Int      @default(0)
 }
 
 model Dish {
-  id        Int                 @id @default(autoincrement())
-  name      String              @unique
-  mealItems MealItem[]
-  allergens DishAllergen[]
+  id                    Int                      @id @default(autoincrement())
+  name                  String                   @unique
+  mealItems             MealItem[]
+  allergens             DishAllergen[]
+  menuTemplateMealItems MenuTemplateMealItem[]
 }
 
 model Allergen {
@@ -75,6 +77,57 @@ model PlateTemplateAllergen {
   allergen        Allergen      @relation(fields: [allergenId], references: [id])
 
   @@id([plateTemplateId, allergenId])
+}
+
+// ========================================
+// Modelos para Plantillas de Menú
+// ========================================
+
+model MenuTemplate {
+  id        Int                  @id @default(autoincrement())
+  name      String               @unique
+  weeks     MenuTemplateWeek[]
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+}
+
+model MenuTemplateWeek {
+  id         Int               @id @default(autoincrement())
+  weekNumber Int
+  template   MenuTemplate      @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId Int
+  days       MenuTemplateDay[]
+
+  @@unique([templateId, weekNumber])
+}
+
+model MenuTemplateDay {
+  id     Int                  @id @default(autoincrement())
+  day    String
+  week   MenuTemplateWeek     @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  weekId Int
+  meals  MenuTemplateMeal[]
+
+  @@unique([weekId, day])
+}
+
+model MenuTemplateMeal {
+  id    Int                      @id @default(autoincrement())
+  type  MealType
+  day   MenuTemplateDay          @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  dayId Int
+  items MenuTemplateMealItem[]
+
+  @@unique([dayId, type])
+}
+
+model MenuTemplateMealItem {
+  id     Int              @id @default(autoincrement())
+  meal   MenuTemplateMeal @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  mealId Int
+  dish   Dish             @relation(fields: [dishId], references: [id])
+  dishId Int
+  order  Int              @default(0)
 }
 
 enum MealType {
