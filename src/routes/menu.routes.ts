@@ -14,6 +14,7 @@ export async function menuRoutes(server: FastifyInstance) {
         meals: {
           include: {
             items: { 
+              orderBy: { order: 'asc' },
               include: { 
                 dish: { 
                   include: { 
@@ -49,6 +50,7 @@ export async function menuRoutes(server: FastifyInstance) {
         meals: {
           include: {
             items: { 
+              orderBy: { order: 'asc' },
               include: { 
                 dish: { 
                   include: { 
@@ -105,6 +107,7 @@ export async function menuRoutes(server: FastifyInstance) {
         meals: {
           include: {
             items: {
+              orderBy: { order: 'asc' },
               include: {
                 dish: {
                   include: {
@@ -169,6 +172,7 @@ export async function menuRoutes(server: FastifyInstance) {
         meals: {
           include: {
             items: { 
+              orderBy: { order: 'asc' },
               include: { 
                 dish: { 
                   include: { 
@@ -315,10 +319,9 @@ export async function menuRoutes(server: FastifyInstance) {
       const skippedMenus: string[] = [];
       const errors: string[] = [];
       
-      // Mapeo de días desde JUEVES (startDate es siempre jueves)
-      // JUE=0, VIE=1, SAB_DOM=2, LUN=4, MAR=5, MIE=6
-      const dayOffsetFromThursday: Record<string, number> = {
-        'JUE': 0, 'VIE': 1, 'SAB_DOM': 2, 'LUN': 4, 'MAR': 5, 'MIE': 6
+      // Mapeo de días a su posición en la semana (LUN=0, MAR=1, ..., SAB_DOM=5)
+      const dayOfWeekMap: Record<string, number> = {
+        'LUN': 0, 'MAR': 1, 'MIE': 2, 'JUE': 3, 'VIE': 4, 'SAB_DOM': 5
       };
 
       // Crear menús desde la plantilla
@@ -326,19 +329,45 @@ export async function menuRoutes(server: FastifyInstance) {
       
       for (const week of template.weeks) {
         console.log(`\n📆 Procesando semana ${week.weekNumber}...`);
-        const weekOffset = week.weekNumber;
         
         for (const day of week.days) {
           try {
             let targetDate = new Date(startDateObj);
             
-            const dayOffset = dayOffsetFromThursday[day.day];
-            if (dayOffset !== undefined) {
-              targetDate.setDate(startDateObj.getDate() + (weekOffset * 7) + dayOffset);
+            // Calcular offset total de días desde el jueves inicial
+            let totalDayOffset: number;
+            
+            if (week.weekNumber === 0) {
+              // Semana 0: solo JUE, VIE, SAB_DOM (parte final de la primera semana)
+              const offsetsWeek0: Record<string, number> = {
+                'JUE': 0,      // Jueves inicial
+                'VIE': 1,      // +1 día
+                'SAB_DOM': 2   // +2 días
+              };
+              
+              const week0Offset = offsetsWeek0[day.day];
+              if (week0Offset === undefined) {
+                console.warn(`⚠️  Día ${day.day} no válido para semana 0`);
+                continue;
+              }
+              totalDayOffset = week0Offset;
             } else {
-              console.warn(`⚠️  Día desconocido: ${day.day}`);
-              continue;
+              // Semana 1+: semanas completas de LUN a DOM
+              // La semana 1 empieza el lunes siguiente al jueves inicial (4 días después)
+              // Cada semana subsecuente suma 7 días más
+              const dayPosition = dayOfWeekMap[day.day];
+              if (dayPosition === undefined) {
+                console.warn(`⚠️  Día desconocido: ${day.day}`);
+                continue;
+              }
+              
+              // Base: del jueves al lunes = 4 días
+              // + posición del día en la semana (LUN=0, MAR=1, etc.)
+              // + 7 días por cada semana después de la primera
+              totalDayOffset = 4 + dayPosition + ((week.weekNumber - 1) * 7);
             }
+            
+            targetDate.setDate(startDateObj.getDate() + totalDayOffset);
 
             targetDate.setUTCHours(0, 0, 0, 0);
             const dateString = targetDate.toISOString().split('T')[0] || '';
@@ -379,6 +408,7 @@ export async function menuRoutes(server: FastifyInstance) {
                 meals: {
                   include: {
                     items: {
+                      orderBy: { order: 'asc' },
                       include: {
                         dish: {
                           include: {
@@ -465,6 +495,7 @@ export async function menuRoutes(server: FastifyInstance) {
       },
       include: {
         items: { 
+          orderBy: { order: 'asc' },
           include: { 
             dish: { 
               include: { 
@@ -565,40 +596,83 @@ export async function menuRoutes(server: FastifyInstance) {
     const { itemId } = request.params as { itemId: string };
     const { name, allergens } = request.body as { name: string; allergens: string[] };
 
-    // Actualizar el MealItem para que apunte al Dish correcto
-    // Si el Dish no existe, se crea con los alérgenos especificados
-    const updatedItem = await prisma.mealItem.update({
-      where: { id: Number(itemId) },
-      data: {
-        dish: {
-          connectOrCreate: {
-            where: { name },
-            create: {
-              name,
-              allergens: {
-                create: allergens.map((allergenName: string) => ({
-                  allergen: {
-                    connectOrCreate: {
-                      where: { name: allergenName },
-                      create: { name: allergenName }
-                    }
-                  }
-                }))
+    try {
+      console.log('🔄 Actualizando plato:', { itemId, name, allergens });
+
+      // Buscar si el plato ya existe
+      let dish = await prisma.dish.findUnique({
+        where: { name },
+        include: { allergens: true }
+      });
+
+      if (dish) {
+        console.log('📝 Plato existente encontrado, actualizando alérgenos...');
+        
+        // Eliminar relaciones de alérgenos existentes
+        await prisma.dishAllergen.deleteMany({
+          where: { dishId: dish.id }
+        });
+
+        // Crear nuevas relaciones de alérgenos una por una
+        for (const allergenName of allergens) {
+          await prisma.dishAllergen.create({
+            data: {
+              dish: { connect: { id: dish.id } },
+              allergen: {
+                connectOrCreate: {
+                  where: { name: allergenName },
+                  create: { name: allergenName }
+                }
               }
+            }
+          });
+        }
+      } else {
+        console.log('✨ Plato nuevo, creando...');
+        
+        // Crear nuevo plato con alérgenos
+        dish = await prisma.dish.create({
+          data: {
+            name,
+            allergens: {
+              create: allergens.map((allergenName: string) => ({
+                allergen: {
+                  connectOrCreate: {
+                    where: { name: allergenName },
+                    create: { name: allergenName }
+                  }
+                }
+              }))
+            }
+          },
+          include: { allergens: true }
+        });
+      }
+
+      // Actualizar el MealItem para que apunte al Dish correcto
+      const updatedItem = await prisma.mealItem.update({
+        where: { id: Number(itemId) },
+        data: {
+          dishId: dish.id
+        },
+        include: {
+          dish: {
+            include: {
+              allergens: { include: { allergen: true } }
             }
           }
         }
-      },
-      include: {
-        dish: {
-          include: {
-            allergens: { include: { allergen: true } }
-          }
-        }
-      }
-    });
+      });
 
-    return updatedItem;
+      console.log('✅ Plato actualizado correctamente');
+      return updatedItem;
+    } catch (error) {
+      console.error('❌ Error actualizando plato:', error);
+      return reply.status(500).send({
+        error: "Error al actualizar el plato",
+        details: error instanceof Error ? error.message : 'Error desconocido'
+      });
+    }
   });
 
   // Eliminar plato específico

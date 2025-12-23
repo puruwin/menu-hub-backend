@@ -73,3 +73,4 @@ ALTER TABLE "MenuTemplateMealItem" ADD CONSTRAINT "MenuTemplateMealItem_mealId_f
 ALTER TABLE "MenuTemplateMealItem" ADD CONSTRAINT "MenuTemplateMealItem_dishId_fkey" FOREIGN KEY ("dishId") REFERENCES "Dish"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 
+
