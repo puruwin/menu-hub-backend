@@ -274,6 +274,14 @@ export async function menuRoutes(server: FastifyInstance) {
       console.log('📅 Fecha de inicio:', startDate);
       console.log('📋 ID de plantilla:', templateId);
 
+      // Guardar o actualizar el schoolStartDate en la configuración
+      await prisma.settings.upsert({
+        where: { key: 'schoolStartDate' },
+        update: { value: startDate },
+        create: { key: 'schoolStartDate', value: startDate }
+      });
+      console.log('✅ schoolStartDate guardado en configuración:', startDate);
+
       // Obtener la plantilla completa de la BD
       const template = await prisma.menuTemplate.findUnique({
         where: { id: templateId },

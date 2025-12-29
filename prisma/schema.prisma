@@ -135,3 +135,14 @@ enum MealType {
   lunch
   dinner
 }
+
+// ========================================
+// Configuración global de la aplicación
+// ========================================
+
+model Settings {
+  id                Int      @id @default(autoincrement())
+  key               String   @unique
+  value             String
+  updatedAt         DateTime @updatedAt
+}

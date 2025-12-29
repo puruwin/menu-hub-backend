@@ -5,6 +5,7 @@ import { authRoutes } from "./routes/auth.routes";
 import { menuRoutes } from "./routes/menu.routes";
 import { plateTemplateRoutes } from "./routes/plate-template.routes";
 import { menuTemplateRoutes } from "./routes/menu-template.routes";
+import { settingsRoutes } from "./routes/settings.routes";
 import { prisma } from "./config/database";
 
 // Inicializar servidor
@@ -23,6 +24,7 @@ async function registerRoutes() {
   await menuRoutes(server);
   await plateTemplateRoutes(server);
   await menuTemplateRoutes(server);
+  await settingsRoutes(server);
 }
 
 // Iniciar servidor
