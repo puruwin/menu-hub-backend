@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as iconv from 'iconv-lite';
 
 interface MenuItem {
   name: string;
@@ -82,6 +83,20 @@ function correctSpelling(text: string): string {
   // Limpiar caracteres de codificación incorrecta comunes
   corrected = corrected.replace(/\uFFFD/g, ''); // Replacement character
   
+  // Correcciones de caracteres mal codificados
+  // Estos reemplazos específicos corrigen los caracteres que aparecen mal en los CSV
+  corrected = corrected.replace(/Ã©/g, 'é');
+  corrected = corrected.replace(/Ã³/g, 'ó');
+  corrected = corrected.replace(/Ã­/g, 'í');
+  corrected = corrected.replace(/Ã±/g, 'ñ');
+  corrected = corrected.replace(/Ãº/g, 'ú');
+  corrected = corrected.replace(/Ã¡/g, 'á');
+  corrected = corrected.replace(/Ã /g, 'à');
+  corrected = corrected.replace(/Â�/g, '');
+  
+  // Reemplazos específicos para caracteres que aparecen como � en la salida
+  corrected = corrected.replace(/�/g, 'é');
+  
   // Aplicar correcciones del diccionario
   for (const [wrong, correct] of Object.entries(spellCorrections)) {
     corrected = corrected.replace(new RegExp(wrong.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), correct);
@@ -93,12 +108,14 @@ function correctSpelling(text: string): string {
   corrected = corrected.replace(/\bMI\b(?!E)/gi, 'MIE');
   corrected = corrected.replace(/\bHaburguesa\b/gi, 'Hamburguesa');
   corrected = corrected.replace(/\borginal\b/gi, 'original');
-  corrected = corrected.replace(/\bCesar\b(?!\s)/gi, 'César');
+  corrected = corrected.replace(/\bCesar\b/gi, 'César');
   corrected = corrected.replace(/\bfrias\b/gi, 'fritas');
   corrected = corrected.replace(/\bmejicana\b/gi, 'mexicana');
   corrected = corrected.replace(/\bpanadera\b/gi, 'panaderas');
   corrected = corrected.replace(/\bCreps\b/gi, 'Crepes');
   corrected = corrected.replace(/\bRisoto\b/gi, 'Risotto');
+  corrected = corrected.replace(/\bLasaa\b/gi, 'Lasagna');
+  corrected = corrected.replace(/\bBoloesa\b/gi, 'Boloñesa');
   
   return corrected;
 }
@@ -158,7 +175,8 @@ function normalizeItemName(name: string): string {
 // Función para parsear CSV
 function parseCSV(filePath: string): Week | null {
   try {
-    const content = fs.readFileSync(filePath, 'utf-8');
+    const buffer = fs.readFileSync(filePath);
+    const content = iconv.decode(buffer, 'win1252');
     const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
     
     if (lines.length < 2) {
@@ -173,13 +191,13 @@ function parseCSV(filePath: string): Week | null {
       weekNumber = parseInt(weekMatch[1], 10);
     } else {
       // Intentar extraer del nombre del archivo
-      const fileNameMatch = path.basename(filePath).match(/S\.(\d+)/);
+      const fileNameMatch = path.basename(filePath).match(/S(\d+)/);
       if (fileNameMatch) {
         weekNumber = parseInt(fileNameMatch[1], 10);
       }
     }
     
-    if (!weekNumber) {
+    if (weekNumber === null || weekNumber === undefined) {
       console.error(`No se pudo encontrar el número de semana en ${filePath}`);
       return null;
     }
@@ -218,12 +236,12 @@ function parseCSV(filePath: string): Week | null {
           const normalizedCell = cell.trim().toUpperCase().replace(/[^\w\s]/g, '');
           // Mapear variaciones de días
           let mappedDay: string | undefined;
-          if (normalizedCell.includes('LUN')) mappedDay = 'LUN';
+          if (normalizedCell.includes('SAB') || normalizedCell.includes('DOM')) mappedDay = 'SAB_DOM';
+          else if (normalizedCell.includes('LUN')) mappedDay = 'LUN';
           else if (normalizedCell.includes('MAR')) mappedDay = 'MAR';
-          else if (normalizedCell.includes('MIE') || normalizedCell.includes('MI')) mappedDay = 'MIE';
+          else if (normalizedCell.includes('MIER') || normalizedCell.includes('MIE')) mappedDay = 'MIE';
           else if (normalizedCell.includes('JUE')) mappedDay = 'JUE';
           else if (normalizedCell.includes('VIE')) mappedDay = 'VIE';
-          else if (normalizedCell.includes('SAB') || normalizedCell.includes('DOM')) mappedDay = 'SAB_DOM';
           
           if (mappedDay) {
             dayIndices.push({ day: mappedDay, index });
@@ -234,12 +252,12 @@ function parseCSV(filePath: string): Week | null {
       // Formato normal: LUN,MAR,MIE,JUE,VIE,SAB Y DOM
       headerCells.forEach((cell, index) => {
         const normalizedCell = cell.trim().toUpperCase().replace(/[^\w\s]/g, '');
-        if (normalizedCell.includes('LUN')) dayIndices.push({ day: 'LUN', index });
+        if (normalizedCell.includes('SAB') || normalizedCell.includes('DOM')) dayIndices.push({ day: 'SAB_DOM', index });
+        else if (normalizedCell.includes('LUN')) dayIndices.push({ day: 'LUN', index });
         else if (normalizedCell.includes('MAR')) dayIndices.push({ day: 'MAR', index });
-        else if (normalizedCell.includes('MIE') || normalizedCell.includes('MI')) dayIndices.push({ day: 'MIE', index });
+        else if (normalizedCell.includes('MIER') || normalizedCell.includes('MIE')) dayIndices.push({ day: 'MIE', index });
         else if (normalizedCell.includes('JUE')) dayIndices.push({ day: 'JUE', index });
         else if (normalizedCell.includes('VIE')) dayIndices.push({ day: 'VIE', index });
-        else if (normalizedCell.includes('SAB') || normalizedCell.includes('DOM')) dayIndices.push({ day: 'SAB_DOM', index });
       });
     }
     
@@ -360,34 +378,17 @@ function parseCSVLine(line: string): string[] {
 function main() {
   const csvDir = path.join(__dirname, '..', 'menu-data-csv');
   const outputFile = path.join(__dirname, '..', 'menu_data_v2.0.json');
-  const existingMenuFile = path.join(__dirname, '..', 'menu_data.json');
-  
-  // Leer semana 0 del archivo existente
-  let week0: Week | null = null;
-  try {
-    const existingData: MenuData = JSON.parse(fs.readFileSync(existingMenuFile, 'utf-8'));
-    week0 = existingData.weeks.find(w => w.week === 0) || null;
-    if (!week0) {
-      console.warn('No se encontró la semana 0 en menu_data.json');
-    }
-  } catch (error) {
-    console.error('Error leyendo menu_data.json:', error);
-  }
   
   // Procesar archivos CSV
   const weeks: Week[] = [];
-  
-  if (week0) {
-    weeks.push(week0);
-  }
   
   // Buscar archivos CSV en el directorio
   const csvFiles = fs.readdirSync(csvDir)
     .filter(file => file.endsWith('.csv'))
     .sort((a, b) => {
       // Extraer número de semana del nombre del archivo
-      const matchA = a.match(/S\.(\d+)/);
-      const matchB = b.match(/S\.(\d+)/);
+      const matchA = a.match(/S(\d+)/);
+      const matchB = b.match(/S(\d+)/);
       if (matchA && matchB) {
         return parseInt(matchA[1], 10) - parseInt(matchB[1], 10);
       }
@@ -398,7 +399,7 @@ function main() {
     const csvFile = path.join(csvDir, csvFileName);
     
     // Extraer número de semana del nombre
-    const weekMatch = csvFileName.match(/S\.(\d+)/);
+    const weekMatch = csvFileName.match(/S(\d+)/);
     if (!weekMatch) {
       console.warn(`No se pudo extraer el número de semana de: ${csvFileName}`);
       continue;
@@ -406,8 +407,8 @@ function main() {
     
     const weekNum = parseInt(weekMatch[1], 10);
     
-    if (weekNum < 1 || weekNum > 8) {
-      console.warn(`Número de semana fuera de rango (1-8): ${weekNum}`);
+    if (weekNum < 0 || weekNum > 8) {
+      console.warn(`Número de semana fuera de rango (0-8): ${weekNum}`);
       continue;
     }
     
