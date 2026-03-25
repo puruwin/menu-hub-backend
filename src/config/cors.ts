@@ -58,7 +58,7 @@ export async function setupCors(server: FastifyInstance) {
 
       console.log(`❌ CORS: Origen no permitido: ${origin}`);
       console.log(`   Orígenes permitidos: ${allowedOrigins.join(', ')}`);
-      callback(new Error('No permitido por CORS'), false);
+      callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
